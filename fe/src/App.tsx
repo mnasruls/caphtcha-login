@@ -12,10 +12,19 @@ function App() {
   const [imgCaptcha, setImgCaptcha] = useState('');
   const [id, setId] = useState('');
   const targetUrl = 'http://localhost:8777/';
+  const config = {
+    DriverDigit: {
+      DotCount: 94,
+      Height: 80,
+      Length: 7,
+      MaxSkew: 1,
+      Width: 240,
+    },
+  };
 
   const _fetch = async () => {
     axios
-      .get(targetUrl + 'api/getCaptcha')
+      .post(targetUrl + 'api/getCaptcha', config)
       .then((res) => {
         if (!res.data)
           if (res.data?.code === 1) {
