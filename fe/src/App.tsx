@@ -24,9 +24,8 @@ function App() {
 
   const _fetch = async () => {
     axios
-      .post(targetUrl + 'api/getCaptcha', config)
+      .post(targetUrl + 'api/getCaptcha',JSON.stringify(config))
       .then((res) => {
-        if (!res.data)
           if (res.data?.code === 1) {
             setId(res.data?.captchaId);
             setImgCaptcha(res.data?.data);
@@ -37,7 +36,7 @@ function App() {
 
   useEffect(() => {
     _fetch();
-  }, [captcha]);
+  }, []);
 
   const xSubmit = () => {
     // do something
@@ -45,7 +44,7 @@ function App() {
     console.log('pass: ' + pass);
     const submitData = { id: id, verif: captcha, email: email, password: pass };
     axios
-      .post(targetUrl + 'api/verifyCaptcha', submitData)
+      .post(targetUrl + 'api/verifyCaptcha', JSON.stringify(submitData))
       .then((res) => res)
       .catch((err) => err);
   };
@@ -77,7 +76,11 @@ function App() {
           <div className="flex gap-2">
             <BasicInput
               value={captcha}
-              onChange={(e) => setCaptcha(e.target.value)}
+              onChange={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setCaptcha(e.target.value)
+              }}
             />
             <BasicButton onClick={xFetch}>Reload</BasicButton>
           </div>

@@ -26,9 +26,15 @@ type configJsonBody struct {
 
 var store = base64Captcha.DefaultMemStore
 
+func JSONEncoder(obj interface{}) string {
+	json, _ := json.MarshalIndent(obj, "", "  ")
+	return string(json)
+}
+
 // base64Captcha create http handler
 func generateCaptchaHandler(w http.ResponseWriter, r *http.Request) {
 	//parse request parameters
+	enableCors(&w)
 	decoder := json.NewDecoder(r.Body)
 	var param configJsonBody
 	err := decoder.Decode(&param)
@@ -38,21 +44,10 @@ func generateCaptchaHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	var driver base64Captcha.Driver
 
-	log.Println(param)
+	log.Println(JSONEncoder(param))
 
-	//create base64 encoding captcha
-	switch param.CaptchaType {
-	case "audio":
-		driver = param.DriverAudio
-	case "string":
-		driver = param.DriverString.ConvertFonts()
-	case "math":
-		driver = param.DriverMath.ConvertFonts()
-	case "chinese":
-		driver = param.DriverChinese.ConvertFonts()
-	default:
-		driver = param.DriverDigit
-	}
+	driver = param.DriverDigit
+
 	c := base64Captcha.NewCaptcha(driver, store)
 	id, b64s, err := c.Generate()
 	body := map[string]interface{}{"code": 1, "data": b64s, "captchaId": id, "msg": "success"}
@@ -66,6 +61,8 @@ func generateCaptchaHandler(w http.ResponseWriter, r *http.Request) {
 // base64Captcha verify http handler
 func captchaVerifyHandle(w http.ResponseWriter, r *http.Request) {
 
+	enableCors(&w)
+
 	//parse request json body
 	decoder := json.NewDecoder(r.Body)
 	var param configJsonBody
@@ -74,6 +71,7 @@ func captchaVerifyHandle(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 	defer r.Body.Close()
+	log.Println(JSONEncoder(param))
 	//verify the captcha
 	body := map[string]interface{}{"code": 0, "msg": "failed"}
 	if store.Verify(param.Id, param.VerifyValue, true) {
@@ -88,8 +86,6 @@ func captchaVerifyHandle(w http.ResponseWriter, r *http.Request) {
 
 //start a net/http server
 func main() {
-	//serve Vuejs+ElementUI+Axios Web Application
-	http.Handle("/", http.FileServer(http.Dir("./static")))
 
 	//api for create captcha
 	http.HandleFunc("/api/getCaptcha", generateCaptchaHandler)
@@ -101,4 +97,8 @@ func main() {
 	if err := http.ListenAndServe(":8777", nil); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
